@@ -1,5 +1,5 @@
 import { EC2 } from "aws-sdk";
-import { getAWSPagedResults } from "../utils";
+import { getAWSPagedResults, arnMatches } from "../utils";
 import { VPC, VPCDiscovery } from "../types";
 
 export class EC2Wrapper {
@@ -87,10 +87,16 @@ export class EC2Wrapper {
       // collect subnets by name
       const subnetsByName = subnets.filter((subnet) => {
         const nameTag = subnet.Tags.find((tag) => tag.Key === "Name");
-        return nameTag.Value === subnetName;
+        console.log(subnetName);
+        console.log(nameTag.Value);
+        console.log(subnetName === nameTag.Value);
+        console.log(arnMatches(subnetName, nameTag.Value));
+        return arnMatches(subnetName, nameTag.Value);
       });
+      console.log(subnetsByName);
       return subnetsByName.length === 0;
     });
+    console.log(missingSubnetNames);
 
     if (missingSubnetNames.length) {
       throw new Error(
@@ -98,6 +104,7 @@ export class EC2Wrapper {
         "Please check the names are correct or remove it."
       );
     }
+    console.log("here");
 
     return subnets.map((subnet) => subnet.SubnetId);
   }
@@ -134,7 +141,7 @@ export class EC2Wrapper {
     const missingGroupsNames = securityGroupNames.filter((groupName) => {
       // collect security groups by name
       const securityGroupsByName = securityGroups.filter((securityGroup) => {
-        return securityGroup.GroupName === groupName;
+        return arnMatches(groupName, securityGroup.GroupName);
       });
       return securityGroupsByName.length === 0;
     });
